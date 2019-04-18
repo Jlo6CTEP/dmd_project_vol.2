@@ -10,12 +10,11 @@ class LoginForm(QWidget):
     login_button = None
     width, height = None, None
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, pixmap):
         super().__init__()
 
         self.width, self.height = width, height
         self.line_field = QLineEdit()
-        self.setWindowTitle('DmD2')
 
         font = QFont("Times", 20, QFont.Bold)
         font.setUnderline(True)
@@ -30,7 +29,6 @@ class LoginForm(QWidget):
         self.button = QPushButton("Log in")
 
         label = QLabel(self)
-        pixmap = QPixmap("../images/main_logo.png").scaledToWidth(self.width - self.width // 10)
         label.setPixmap(pixmap)
 
         v_layout_back = QVBoxLayout()
