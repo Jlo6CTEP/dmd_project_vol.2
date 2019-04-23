@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QMainWindow, 
 class LoginForm(QWidget):
     password_field = None
     login_field = None
-    login_button = None
     width, height = None, None
 
     def __init__(self, width, height, pixmap):

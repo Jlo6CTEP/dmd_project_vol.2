@@ -1,13 +1,3 @@
-student = {"name": None,
-           "surname": None,
-           "login": None,
-           "password": None,
-           "courses": None,
-           "level": None,
-           "reg_date": None}
+student = ["name", "surname", "login", "password", "courses", "registration date", "role"]
 
-course = {
-  "name": None,
-  "description": None,
-  "assessment": None
-}
+course = ["name", "description", "assessment"]
