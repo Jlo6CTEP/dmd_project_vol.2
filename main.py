@@ -26,11 +26,11 @@ class MainWindow(QMainWindow):
         if sys.platform != 'linux':
             my_app_id = 'InnoUI.DMD_project.ez_A_for_course.101'  # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
-        self.setWindowIcon(QIcon("../images/main_logo.png"))
+        self.setWindowIcon(QIcon("./images/main_logo.png"))
 
         size = QDesktopWidget().screenGeometry(-1)
         self.width = size.width() // 5
-        self.picture = QPixmap("../images/main_logo.png").scaledToWidth(self.width - self.width // 20)
+        self.picture = QPixmap("./images/main_logo.png").scaledToWidth(self.width - self.width // 20)
 
         self.height = self.picture.height() + size.height() // 16
         self.setFixedSize(self.width, self.height)

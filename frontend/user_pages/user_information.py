@@ -21,7 +21,7 @@ class BaseUserInfo(QWidget):
         size = QDesktopWidget().screenGeometry(-1)
         user_info = QHBoxLayout()
         pic = QLabel()
-        pic.setPixmap(QPixmap('../images/user.png'))
+        pic.setPixmap(QPixmap('./images/user.png'))
 
         pic_groupbox = QGroupBox('Profile picture')
 

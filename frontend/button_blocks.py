@@ -13,10 +13,10 @@ class ButtonBlock(QHBoxLayout):
         super().__init__()
 
         self.save_button = QPushButton()
-        self.save_button.setIcon(QIcon('../images/save.png'))
+        self.save_button.setIcon(QIcon('./images/save.png'))
 
         self.edit_button = QPushButton()
-        self.edit_button.setIcon(QIcon('../images/edit.png'))
+        self.edit_button.setIcon(QIcon('./images/edit.png'))
 
         if not align_left:
             self.addStretch()
@@ -36,7 +36,7 @@ class SearchButtonBlock(QHBoxLayout):
         self.search_line = QLineEdit()
         label = QLabel()
 
-        pic = QPixmap('../images/search.png')
+        pic = QPixmap('./images/search.png')
         pic = pic.scaledToWidth(self.search_line.sizeHint().height())
 
         label.setPixmap(pic)

@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QTableWidget, QLineEdit
 from pyArango.connection import Connection
 from pyArango.theExceptions import DocumentNotFoundError
 
@@ -80,8 +79,6 @@ class DbManager:
                 profiles.update({doc.pop('_key'): doc})
         return profiles
 
-
-
     def edit_assessment_grade(self, user, course, value):
         print(user, course, value)
 
@@ -104,7 +101,6 @@ class DbManager:
                 if x['role'] == 'teacher' or x['role'] == 'student']
 
     def edit_user_courses(self, user, course_list):
-        print(user, course_list)
         doc = self.db.collections['user'][user]
         old = set(doc['courses'])
         doc['courses'] = course_list
@@ -121,5 +117,4 @@ class DbManager:
 
 
 db = DbManager()
-print(db.get_teachers_and_students())
 

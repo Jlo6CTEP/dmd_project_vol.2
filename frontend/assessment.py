@@ -33,12 +33,12 @@ class EditableAssessment(BaseAssessment):
 
         add_button = QPushButton()
         add_button.setFixedSize(new_assessment.sizeHint().height(), new_assessment.sizeHint().height())
-        add_button.setIcon(QIcon('../images/add.png'))
+        add_button.setIcon(QIcon('./images/add.png'))
         add_button.clicked.connect(lambda: self.insert_new(new_assessment, course))
         self.form.addRow(new_assessment, add_button)
 
         del_button = QPushButton()
-        del_button.setIcon(QIcon('../images/del.png'))
+        del_button.setIcon(QIcon('./images/del.png'))
         del_button.clicked.connect(lambda: self.remove(course))
 
         button_block = ButtonBlock(True)

@@ -22,7 +22,7 @@ class AdminUserTable(QGroupBox):
         button_block = ButtonBlock()
 
         del_button = QPushButton()
-        del_button.setIcon(QIcon('../images/del.png'))
+        del_button.setIcon(QIcon('./images/del.png'))
         button_block.insertWidget(3, del_button)
 
         user_info = db.get_users_for_admin()
@@ -42,7 +42,7 @@ class AdminUserTable(QGroupBox):
         field_list = []
 
         add_button = QPushButton()
-        add_button.setIcon(QIcon('../images/add.png'))
+        add_button.setIcon(QIcon('./images/add.png'))
         add_button.clicked.connect(lambda: self.add_new(field_list, main_layout))
 
         for x in student:
@@ -82,7 +82,7 @@ class TeacherStudentsTable(QGroupBox):
     def __init__(self, user_info, button_block=None):
         super().__init__('Your students')
 
-        widget_list_long = {}
+        widget_list_long = []
         widget_list_short = []
 
         main_layout = QVBoxLayout()
@@ -103,7 +103,7 @@ class TeacherStudentsTable(QGroupBox):
                 for assessment in assessments[1].items():
                     widget = self.grade_widget(assessment[1])
                     widget_list_short.append(widget)
-                    widget_list_long.update({x[0]: (assessment[0], widget, assessments[0])})
+                    widget_list_long.append((x[0], (assessment[0], widget, assessments[0])))
                     assessment_layout.addWidget(QLabel(assessment[0] + ':'))
                     assessment_layout.addWidget(widget)
                     assessment_layout.addStretch()
@@ -119,7 +119,7 @@ class TeacherStudentsTable(QGroupBox):
         self.setLayout(main_layout)
 
     def __save(self, widget_list):
-        for x in widget_list.items():
+        for x in widget_list:
             if not x[1][1].isReadOnly():
                 x[1][1].push_to_db(x[1][0], db.edit_assessment_grade, [x[0], x[1][2]])
 

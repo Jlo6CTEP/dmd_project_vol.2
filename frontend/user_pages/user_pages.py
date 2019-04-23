@@ -1,7 +1,6 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QGroupBox, QLineEdit, QFormLayout, QLabel, QPushButton, QToolTip
-from PyQt5.QtWidgets import QSizePolicy, QDesktopWidget, \
-    QHBoxLayout, QTabWidget
+from PyQt5.QtWidgets import QSizePolicy, QDesktopWidget, QHBoxLayout, QTabWidget
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from backend.db_manager.db_manager import db
@@ -33,7 +32,7 @@ class BasePage(QWidget):
         size = QDesktopWidget().screenGeometry(-1)
 
         self.logout_button = QPushButton()
-        self.logout_button.setIcon(QIcon('../images/exit.png'))
+        self.logout_button.setIcon(QIcon('./images/exit.png'))
         self.logout_button.setFixedSize(size.height() // 32, size.height() // 32)
         self.logout_button.clicked.connect(self.logout)
 
@@ -74,7 +73,10 @@ class StudentPage(BasePage):
         self.pages.addTab(user_widget, 'Personal Info')
 
         for x in course_info:
-            assessment = StudentAssessment(user.user_id, x[0])
+            try:
+                assessment = StudentAssessment(user.user_id, x[0])
+            except KeyError:
+                assessment = QWidget()
             course_widget = UnEditableCourse(x[0], assessment)
             courses_layout.addWidget(course_widget)
         courses_layout.addStretch()
@@ -105,9 +107,12 @@ class TeacherPage(BasePage):
         courses_layout.addStretch()
         courses_page.setLayout(courses_layout)
         button_block = ButtonBlock()
+
         students = TeacherStudentsTable(db.get_students_for_teacher(user.user_id), button_block)
         self.pages.addTab(courses_page, 'My Courses')
         self.pages.addTab(students, 'Students')
+
+
 
 
 class PrincipalPage(BasePage):
@@ -137,7 +142,7 @@ class PrincipalPage(BasePage):
         input_fields = []
 
         add_button = QPushButton()
-        add_button.setIcon(QIcon('../images/add.png'))
+        add_button.setIcon(QIcon('./images/add.png'))
         add_button.clicked.connect(lambda: self.add_new(courses_layout, input_fields))
 
         for x in course:
