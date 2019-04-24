@@ -1,7 +1,8 @@
 from pyArango.connection import Connection
-from pyArango.theExceptions import DocumentNotFoundError
+from pyArango.theExceptions import DocumentNotFoundError, CreationError
 
 from backend.db_manager.documents_structure import course as course_schema
+from backend.db_manager.documents_structure import student as user_schema
 
 student_info_to_show = ['name', 'surname', 'login', 'assessments']
 
@@ -60,14 +61,32 @@ class DbManager:
     def get_courses(self):
         return [purge_doc(x) for x in self.db.collections['course'].fetchAll(rawResults=True)]
 
-    def remove_assessment(self, course, assessment):
-        print(course, assessment)
+    def remove_assessment(self, course_name, assessment):
+        course = self.db.collections['course'][course_name]
+        course['assessment'].remove(assessment)
+        for x in self.db.collections['grades'].fetchAll():
+            if x['_key'].split('_')[1] == course_name:
+                del x[assessment]
+                x.save()
+        course.save()
 
-    def update_assessment(self, course, assessment, new_value):
-        print(course, assessment, new_value)
+    def update_assessment(self, course_name, assessment, new_value):
+        new_value = list(new_value.keys())[0]
+        course = self.db.collections['course'][course_name]
+        course['assessment'].remove(assessment)
+        course['assessment'].append(new_value)
+        for x in self.db.collections['grades'].fetchAll():
+            if x['_key'].split('_')[1] == course_name:
+                old = x[assessment]
+                del x[assessment]
+                x[new_value] = old
+                x.save()
+        course.save()
 
     def add_assessment(self, course, assessment):
-        print(course, assessment)
+        course = self.db.collections['course'][course]
+        course['assessment'].append(assessment)
+        course.save()
 
     def get_students_for_teacher(self, teacher):
         courses = self.db.collections['user'][teacher]['courses']
@@ -80,7 +99,12 @@ class DbManager:
         return profiles
 
     def edit_assessment_grade(self, user, course, value):
-        print(user, course, value)
+        key, value = list(value.items())[0]
+        if self.db.collections['user'][user]['role'] != 'student':
+            return
+        doc = self.db.collections['grades'][user + '_' + course]
+        doc[key] = value
+        doc.save()
 
     def get_users_for_admin(self):
         return [purge_doc(x) for x in self.db.collections['user'].fetchAll(rawResults=True)]
@@ -93,7 +117,32 @@ class DbManager:
         doc.save()
 
     def insert_user(self, key, data):
-        print(key, data)
+
+        doc = self.db.collections['user'].createDocument()
+        for x in user_schema:
+            doc[x] = data[x]
+        doc._key = key
+
+        counter = 0
+        flag = True
+        while flag:
+            try:
+                doc.save()
+                flag = False
+                if counter != 0:
+                    key = key + str(counter)
+            except CreationError:
+                counter += 1
+                doc._key = key + str(counter)
+
+        if data['role'] == 'student':
+            for x in data['courses']:
+                grade = self.db.collections['grades'].createDocument()
+                for f in self.get_course_assessment(x):
+                    grade[f] = ''
+                grade._key = key + '_' + x
+                grade.save()
+        return key
 
     def get_teachers_and_students(self):
         return [purge_doc(x) for x in
@@ -115,6 +164,48 @@ class DbManager:
                 except DocumentNotFoundError:
                     pass
 
+    def spatial_search(self, student_id):
+        try:
+            self.db.collections['user'][student_id]
+        except DocumentNotFoundError:
+            return None
+        grades_values = {x[1]: x[0] for x in enumerate(['', 'F', 'D', 'C', 'B', 'A'])}
+        users = {x['_key']: [x, 0, 0] for x in self.db.collections['user'].fetchAll(rawResults=True)
+                 if x['role'] == 'student'}
+        grades = [(x.pop('_key'), purge_doc(x)) for x in self.db.collections['grades'].fetchAll(rawResults=True)]
+        for x in grades:
+            student = users[x[0].split('_')[0]]
+            for f in x[1].values():
+                grade = grades_values[f]
+                student[1] += grade
+                if grade != 0:
+                    student[2] += 1
+        for x in users.values():
+            x.append(x[1] / x[2] if x[2] != 0 else 0)
+        users = sorted(users.values(), key=lambda x: x[3])
+        user = list(filter(lambda x: users[x][0]['_key'] == student_id, range(len(users))))[0]
+
+        forward = min(user + 1, len(users))
+        backward = max(user - 1, 0)
+
+        neighbours = []
+
+        while len(neighbours) < 3:
+            forward_diff = abs(users[user][3] - users[forward][3])
+            backward_diff = abs(users[user][3] - users[backward][3])
+
+            if forward_diff > backward_diff:
+                neighbours.append(users[forward])
+                forward = min(forward + 1, len(users))
+            else:
+                neighbours.append(users[backward])
+                backward = max(backward - 1, 0)
+        neighbours.insert(0, users[user])
+
+        for x in neighbours:
+            purge_doc(x[0])
+
+        return neighbours
+
 
 db = DbManager()
-

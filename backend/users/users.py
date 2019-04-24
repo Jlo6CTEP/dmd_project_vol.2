@@ -1,3 +1,6 @@
+from copy import copy
+
+
 class BaseUser:
     user_id = None
     user_info = None
@@ -6,7 +9,9 @@ class BaseUser:
         pass
 
     def load_from_dict(self, row):
-        self.user_info = row
+        self.user_info = copy(row)
+        if self.user_info.get('_key', None) is not None:
+            self.user_info.pop('_key')
 
 
 class Student(BaseUser):

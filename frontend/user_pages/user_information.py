@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QLabel, QFormLayout
 from PyQt5.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QDesktopWidget
 
 from backend.db_manager.db_manager import db
-from collapsible_widget.collapsible_box import CollapsibleBox
 from frontend.button_blocks import ButtonBlock
 from frontend.editable_widget import EditableWidget, edit
 from frontend.user_pages.information import info_to_show
@@ -15,7 +14,7 @@ class BaseUserInfo(QWidget):
     main_layout = None
     __collapsible_box = None
 
-    def __init__(self, user, is_expanded):
+    def __init__(self, user):
         super().__init__()
 
         size = QDesktopWidget().screenGeometry(-1)
@@ -40,21 +39,12 @@ class BaseUserInfo(QWidget):
         self.main_layout = QVBoxLayout()
         self.main_layout.addLayout(user_info)
 
-        self.__collapsible_box = CollapsibleBox(is_expanded, user.user_info['name'] + ' ' + user.user_info['surname'])
-
-        self.__collapsible_box.set_content_layout(self.main_layout)
-        collapsible_layout = QHBoxLayout()
-        collapsible_layout.addWidget(self.__collapsible_box)
-
-        self.setLayout(collapsible_layout)
-
-    def update(self):
-        self.__collapsible_box.set_content_layout(self.main_layout)
+        self.setLayout(self.main_layout)
 
 
 class EditableUserInfo(BaseUserInfo):
-    def __init__(self, user, editable_info, is_buttons=True, is_expanded=True):
-        super().__init__(user, is_expanded)
+    def __init__(self, user, editable_info, is_buttons=True):
+        super().__init__(user)
 
         if user is None:
             return
@@ -75,7 +65,6 @@ class EditableUserInfo(BaseUserInfo):
             buttons.save_button.clicked.connect(lambda: save(user, widgets_list))
             buttons.edit_button.clicked.connect(lambda: edit(widgets_list))
             self.main_layout.insertLayout(0, buttons)
-            self.update()
 
 
 def save(user, widgets_list):
@@ -84,13 +73,16 @@ def save(user, widgets_list):
 
 
 class UnEditableUserInfo(BaseUserInfo):
-    def __init__(self, user, is_expanded=True):
-        super().__init__(user, is_expanded)
+    def __init__(self, user, additional_fields=None):
+        super().__init__(user)
 
         if user is None:
             return
 
-        for x in info_to_show:
+        if additional_fields is None:
+            additional_fields = []
+
+        for x in info_to_show + additional_fields:
             line = QHBoxLayout()
             line.addWidget(QLabel(x + ':'))
             line.addWidget(QLabel(str(user.user_info[x])))

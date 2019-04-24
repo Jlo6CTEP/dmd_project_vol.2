@@ -1,19 +1,22 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QGroupBox, QLineEdit, QFormLayout, QLabel, QPushButton, QToolTip
+from PyQt5.QtWidgets import QGroupBox, QLineEdit, QFormLayout, QLabel, QPushButton, QToolTip, QScrollArea
 from PyQt5.QtWidgets import QSizePolicy, QDesktopWidget, QHBoxLayout, QTabWidget
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
+from backend.backend import levels
 from backend.db_manager.db_manager import db
 from backend.db_manager.documents_structure import course
 from frontend.assessment import EditableAssessment
 from frontend.assessment import StudentAssessment
 from frontend.button_blocks import ButtonBlock
 from frontend.course import UnEditableCourse
-from frontend.editable_widget import EditableWidget, edit
+from frontend.editable_widget import edit
 from frontend.students_tables import AdminUserTable
 from frontend.students_tables import PrincipalStudentsTable
 from frontend.students_tables import TeacherStudentsTable
 from frontend.user_pages.information import self_editable_info
+from frontend.user_pages.items_paging import PrincipalUserPaging
 from frontend.user_pages.user_information import EditableUserInfo
 from frontend.user_pages.user_information import UnEditableUserInfo
 
@@ -113,9 +116,9 @@ class TeacherPage(BasePage):
         self.pages.addTab(students, 'Students')
 
 
-
-
 class PrincipalPage(BasePage):
+    spatial_search_data = None
+    wrapper = None
 
     def __init__(self, parent, user=None):
         super().__init__(parent, user)
@@ -160,37 +163,86 @@ class PrincipalPage(BasePage):
         courses_layout.insertWidget(0, new_course)
 
         students = PrincipalStudentsTable(db.get_students_for_teacher(user.user_id))
-        self.pages.addTab(courses_page, 'Courses')
+
+        courses_scroll = QScrollArea()
+        courses_scroll.setWidget(courses_page)
+        courses_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        courses_scroll.setWidgetResizable(True)
+
+        self.pages.addTab(courses_scroll, 'Courses')
         self.pages.addTab(students, 'Students')
 
+        paging = PrincipalUserPaging(db.get_teachers_and_students())
+
         button_block = ButtonBlock()
+        button_block.edit_button.clicked.connect(lambda: edit(paging.user_list))
+        button_block.save_button.clicked.connect(lambda: self.__save(paging.user_list_long))
 
-        teacher_layout = QVBoxLayout()
-        teacher_layout.addLayout(button_block)
+        user_layout = QVBoxLayout()
+        user_layout.addLayout(button_block)
 
-        teacher_list = []
-        teacher_list_long = []
+        scroll = QScrollArea()
+        scroll.setWidget(paging)
+        scroll.setWidgetResizable(True)
 
-        button_block.edit_button.clicked.connect(lambda: edit(teacher_list))
-        button_block.save_button.clicked.connect(lambda: self.__save(teacher_list_long))
-
-        for x in db.get_teachers_and_students():
-            teacher_line = EditableWidget(','.join(x['courses']))
-            teacher_list.append(teacher_line)
-            teacher_list_long.append((teacher_line, x['_key']))
-
-            teacher_courses = QFormLayout()
-            teacher_courses.addRow(QLabel('courses: '), teacher_line)
-
-            teacher = QGroupBox(x['name'] + ' ' + x['surname'])
-            teacher.setLayout(teacher_courses)
-            teacher_layout.addWidget(teacher)
-        teacher_layout.addStretch()
+        user_layout.addWidget(scroll)
 
         teacher_widget = QWidget()
-        teacher_widget.setLayout(teacher_layout)
+        teacher_widget.setLayout(user_layout)
 
         self.pages.addTab(teacher_widget, 'Teachers')
+
+        spatial_search = QWidget()
+
+        ss_layout = QVBoxLayout()
+
+        result_box = QGroupBox('Result')
+        scroll = QScrollArea()
+        scroll.setWidget(result_box)
+        scroll.setWidgetResizable(True)
+
+        search_line = QLineEdit()
+        search_button = QPushButton()
+        search_button.setIcon(QIcon('./images/search.png'))
+        search_button.setFixedSize(search_line.sizeHint().height(), search_line.sizeHint().height())
+        search_button.clicked.connect(lambda: self.spatial_search(search_line))
+
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(search_line)
+        search_layout.addWidget(search_button)
+        search_layout.addStretch()
+
+        self.spatial_search_data = QWidget()
+        self.wrapper = QHBoxLayout()
+        self.wrapper.addWidget(self.spatial_search_data)
+
+        result_box.setLayout(self.wrapper)
+
+        ss_layout.addLayout(search_layout)
+        ss_layout.addWidget(scroll)
+
+        spatial_search.setLayout(ss_layout)
+
+        self.pages.addTab(spatial_search, 'Spatial Search')
+
+    def spatial_search(self, line):
+        self.spatial_search_data.deleteLater()
+
+        new_result = QVBoxLayout()
+
+        spatial_searh_data = db.spatial_search(line.text())
+        if spatial_searh_data is not None:
+            for x in spatial_searh_data:
+                x[0].update({'Average_grade': str(x[3])})
+                user = levels[x[0]['role']]()
+                user.load_from_dict(x[0])
+                new_result.addWidget(UnEditableUserInfo(user, ['Average_grade']))
+            new_result.addStretch()
+
+        self.wrapper.removeWidget(self.spatial_search_data)
+        self.spatial_search_data = QWidget()
+        self.spatial_search_data.setLayout(new_result)
+        self.wrapper.addWidget(self.spatial_search_data)
 
     def add_new(self, courses_layout, input_fields):
         try:
