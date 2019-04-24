@@ -1,23 +1,18 @@
 import ctypes
 import sys
 
-from PyQt5.QtGui import QPixmap, QIcon, QFont
-from PyQt5.QtWidgets import QApplication, QDesktopWidget, QMainWindow, QErrorMessage, QStackedWidget, \
-    QWIDGETSIZE_MAX, QLabel, QSizePolicy
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtWidgets import QApplication, QDesktopWidget, QMainWindow, QStackedWidget, \
+    QWIDGETSIZE_MAX, QToolTip
 
-from backend.backend import backend
+from backend.backend import backend, roles
 from frontend.login_form import LoginForm
-from frontend.user_pages.admin_page import AdminPage
-from frontend.user_pages.base_user_page import BasePage
-from frontend.user_pages.principal_page import PrincipalPage
-from frontend.user_pages.student_page import StudentPage
-from frontend.user_pages.teacher_page import TeacherPage
+from frontend.user_pages.user_pages import BasePage, PrincipalPage, StudentPage, TeacherPage, AdminPage
 
-levels = {x[0]: x[1] for x in enumerate([StudentPage, TeacherPage, PrincipalPage, AdminPage])}
+levels = {x[0]: x[1] for x in zip(roles, [StudentPage, TeacherPage, PrincipalPage, AdminPage])}
 
 
 class MainWindow(QMainWindow):
-    error_dialog = None
     screen = None
     width, height = None, None
     picture = None
@@ -31,15 +26,14 @@ class MainWindow(QMainWindow):
         if sys.platform != 'linux':
             my_app_id = 'InnoUI.DMD_project.ez_A_for_course.101'  # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
-        self.setWindowIcon(QIcon("../images/main_logo.png"))
+        self.setWindowIcon(QIcon("./images/main_logo.png"))
 
         size = QDesktopWidget().screenGeometry(-1)
         self.width = size.width() // 5
-        self.picture = QPixmap("../images/main_logo.png").scaledToWidth(self.width - self.width // 20)
+        self.picture = QPixmap("./images/main_logo.png").scaledToWidth(self.width - self.width // 20)
 
         self.height = self.picture.height() + size.height() // 16
         self.setFixedSize(self.width, self.height)
-        self.error_dialog = QErrorMessage()
         self.setWindowTitle('DmD2')
         self.pages = QStackedWidget()
 
@@ -53,9 +47,9 @@ class MainWindow(QMainWindow):
         try:
             backend.login(login, password)
         except AssertionError as exception:
-            self.error_dialog.showMessage(str(exception))
+            QToolTip.showText(self.mapToGlobal(self.login_form.geometry().center()), 'Invalid credentials')
             return
-        self.user_page = levels[backend.user.user_info['level']](self, backend.user)
+        self.user_page = levels[backend.user.user_info['role']](self, backend.user)
         self.pages.addWidget(self.user_page)
         self.pages.setCurrentWidget(self.user_page)
 

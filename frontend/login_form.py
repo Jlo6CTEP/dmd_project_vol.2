@@ -1,13 +1,12 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QPixmap
-from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QMainWindow, QLineEdit, QLabel, QPushButton, \
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QLineEdit, QLabel, QPushButton, \
     QVBoxLayout, QHBoxLayout
 
 
 class LoginForm(QWidget):
     password_field = None
     login_field = None
-    login_button = None
     width, height = None, None
 
     def __init__(self, width, height, pixmap):
