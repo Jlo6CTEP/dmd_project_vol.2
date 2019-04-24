@@ -162,7 +162,7 @@ class PrincipalPage(BasePage):
 
         courses_layout.insertWidget(0, new_course)
 
-        students = PrincipalStudentsTable(db.get_students_for_teacher(user.user_id))
+        students = PrincipalStudentsTable(db.get_students())
 
         courses_scroll = QScrollArea()
         courses_scroll.setWidget(courses_page)
@@ -190,7 +190,7 @@ class PrincipalPage(BasePage):
         teacher_widget = QWidget()
         teacher_widget.setLayout(user_layout)
 
-        self.pages.addTab(teacher_widget, 'Teachers')
+        self.pages.addTab(teacher_widget, 'User courses')
 
         spatial_search = QWidget()
 

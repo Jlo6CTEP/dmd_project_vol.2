@@ -27,8 +27,8 @@ class EditableWidget(QLineEdit):
             if self.old != self.text():
                 self.setText(self.old)
             palette = QPalette()
-            palette.setColor(QPalette.Base, Qt.gray)
-            palette.setColor(QPalette.Text, Qt.darkGray)
+            palette.setColor(QPalette.Base, Qt.lightGray)
+            palette.setColor(QPalette.Text, Qt.black)
         self.setPalette(palette)
 
     def push_to_db(self, key, function, args):

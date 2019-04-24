@@ -64,10 +64,10 @@ class BaseItemsPaging(QWidget):
         pass
 
     def go_left(self):
-        if int(self.page_counter.text() - 1) <= 0:
+        if int(self.page_counter.text()) - 1 <= 0:
             return
         if self.position != int(self.page_counter.text()) - 1:
-            self.position = int(self.page_counter.text())
+            self.position = int(self.page_counter.text()) - 1
         else:
             self.position -= 1
             self.page_counter.setText(str(self.position + 1))
@@ -77,7 +77,7 @@ class BaseItemsPaging(QWidget):
         if int(self.page_counter.text()) >= (self.size - 1) // self.items_per_page + 1:
             return
         if self.position != int(self.page_counter.text()) - 1:
-            self.position = int(self.page_counter.text())
+            self.position = int(self.page_counter.text()) - 1
         else:
             self.position += 1
             self.page_counter.setText(str(self.position + 1))

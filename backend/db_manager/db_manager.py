@@ -88,6 +88,18 @@ class DbManager:
         course['assessment'].append(assessment)
         course.save()
 
+    def get_students(self):
+        doc = {x.pop('_key'): purge_doc(x) for x in
+               self.db.collections['user'].fetchAll(rawResults=True) if x['role'] == 'student'}
+
+        grades = {x.pop('_key'): purge_doc(x) for x in self.db.collections['grades'].fetchAll(rawResults=True)}
+        [x[1].update({'assessments': {}}) for x in doc.items()]
+
+        for x in grades.items():
+            key = x[0].split('_')
+            doc[key[0]]['assessments'].update({key[1]: x[1]})
+        return doc
+
     def get_students_for_teacher(self, teacher):
         courses = self.db.collections['user'][teacher]['courses']
         profiles = {}
