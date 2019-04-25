@@ -6,7 +6,7 @@ from pyArango.theExceptions import DocumentNotFoundError
 
 from backend.db_manager.db_manager import db
 from backend.db_manager.documents_structure import student
-from frontend.button_blocks import SearchButtonBlock
+from frontend.button_blocks import SearchButtonBlock, SearchBox
 from frontend.editable_widget import EditableWidget, edit
 from frontend.user_pages.items_paging import EditableUserInfoPaging, TeacherStudentsPaging
 
@@ -47,7 +47,12 @@ class AdminUserTable(QGroupBox):
         scroll.setWidget(paging)
         scroll.setWidgetResizable(True)
 
+        search_box = SearchBox()
+        search_box.search_button.clicked.connect\
+            (lambda: paging.search(search_box.search_line.text(), paging.widget_list))
+
         main_layout.addWidget(new_item)
+        main_layout.addLayout(search_box.search_form)
         main_layout.addWidget(scroll)
         main_layout.addStretch()
 
@@ -71,7 +76,7 @@ class TeacherStudentsTable(QGroupBox):
     grade_widget = EditableWidget
     paging = None
 
-    def __init__(self, user_info, button_block=None):
+    def __init__(self, user_info):
         super().__init__('Your students')
 
         self.paging = TeacherStudentsPaging(user_info, self.grade_widget)
@@ -80,18 +85,16 @@ class TeacherStudentsTable(QGroupBox):
 
         main_layout = QVBoxLayout()
 
-        utility_box = SearchButtonBlock(button_block)
-        if button_block:
-            button_block.edit_button.clicked.connect(lambda: edit(self.paging.widget_list_short))
-            button_block.save_button.clicked.connect(lambda: self.__save(self.paging.widget_list_long))
-
-        utility_box.search_line.textChanged.connect(
-            lambda: self.__search(utility_box.search_line.text(), self.paging.student_widget_list))
+        utility_box = SearchButtonBlock()
+        utility_box.edit_button.clicked.connect(lambda: edit(self.paging.widget_list_short))
+        utility_box.save_button.clicked.connect(lambda: self.__save(self.paging.widget_list_long))
+        utility_box.search_button.clicked.connect(
+            lambda: self.paging.search(utility_box.search_line.text(), self.paging.widget_list))
 
         scroll.setWidget(self.paging)
         scroll.setWidgetResizable(True)
 
-        main_layout.addLayout(utility_box)
+        main_layout.addWidget(utility_box)
         main_layout.addWidget(scroll)
         self.setLayout(main_layout)
 
@@ -100,24 +103,10 @@ class TeacherStudentsTable(QGroupBox):
             if not x[1][1].isReadOnly():
                 x[1][1].push_to_db(x[1][0], db.edit_assessment_grade, [x[0], x[1][2]])
 
-    def __search(self, text, widget_list):
-        a = widget_list.get(text, None)
-        if a is not None:
-            print(a)
-            first = self.paging.h_students_layout.itemAt(0).widget()
-            index = self.paging.h_students_layout.indexOf(a)
-            second = self.paging.h_students_layout.itemAt(index).widget()
-            if first == second:
-                return
-            first.setParent(None)
-            second.setParent(None)
-            self.paging.h_students_layout.insertWidget(0, second)
-            self.paging.h_students_layout.insertWidget(index, first)
-
 
 class PrincipalStudentsTable(TeacherStudentsTable):
     grade_widget = QLabel
 
-    def __init__(self, user_info, button_block=None):
-        super().__init__(user_info, button_block)
+    def __init__(self, user_info):
+        super().__init__(user_info)
         self.setTitle('Students')

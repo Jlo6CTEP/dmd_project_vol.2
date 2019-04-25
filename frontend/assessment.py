@@ -42,12 +42,12 @@ class EditableAssessment(BaseAssessment):
         del_button.clicked.connect(lambda: self.remove(course))
 
         button_block = ButtonBlock(True)
-        button_block.insertWidget(3, del_button)
+        button_block.block_layout.insertWidget(3, del_button)
         button_block.edit_button.clicked.connect(lambda: edit([f[0] for f in self.info_list]))
         button_block.save_button.clicked.connect(lambda: self.__save(course))
 
         v_layout = QVBoxLayout()
-        v_layout.addLayout(button_block)
+        v_layout.addLayout(button_block.block_layout)
         v_layout.addLayout(self.form)
 
         self.setLayout(v_layout)

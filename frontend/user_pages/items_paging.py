@@ -1,9 +1,8 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QWidget, QHBoxLayout, QLabel, QLineEdit, QGroupBox, QFormLayout
 
-from backend.db_manager.db_manager import db
 from backend.users.users import BaseUser
-from frontend.editable_widget import edit, EditableWidget
+from frontend.editable_widget import EditableWidget
 from frontend.user_pages.information import admin_editable_info
 from frontend.user_pages.user_information import EditableUserInfo
 
@@ -15,6 +14,7 @@ class BaseItemsPaging(QWidget):
     values = None
     main_layout = None
     h_students_layout = None
+    widget_list = None
     items_per_page = 50
 
     def __init__(self, values):
@@ -83,44 +83,71 @@ class BaseItemsPaging(QWidget):
             self.page_counter.setText(str(self.position + 1))
         self.initialize_current()
 
+    def search(self, text, widget_list):
+        a = widget_list.get(text, None)
+        keys = list(self.values.keys())
+        if a is None:
+            try:
+                user = keys.index(text)
+            except ValueError:
+                return
+            self.page_counter.setText(str((user // self.items_per_page + 1)))
+            self.position = max(0, user // self.items_per_page)
+            self.initialize_current()
+            index = user % self.items_per_page
+        else:
+            index = self.h_students_layout.indexOf(a)
+        first = self.h_students_layout.itemAt(0).widget()
+        second = self.h_students_layout.itemAt(index).widget()
+        if first == second:
+            return
+        first.setParent(None)
+        second.setParent(None)
+        self.h_students_layout.insertWidget(0, second)
+        self.h_students_layout.insertWidget(index, first)
+
 
 class EditableUserInfoPaging(BaseItemsPaging):
     def __init__(self, values):
         super().__init__(values)
 
     def initialize_current(self):
-        main_layout = QVBoxLayout()
-        for x in self.values[self.position * self.items_per_page:
-                             min((self.position + 1) * self.items_per_page, self.size)]:
+        if self.h_students_layout is not None:
+            self.h_students_layout.deleteLater()
+        self.h_students_layout = QVBoxLayout()
+        self.widget_list = {}
+        for x in list(self.values.items())[self.position * self.items_per_page:
+        min((self.position + 1) * self.items_per_page, self.size)]:
             user = BaseUser()
-            user.user_id = x['_key']
-            user.load_from_dict(x)
-            main_layout.addWidget(EditableUserInfo(user, admin_editable_info))
+            user.user_id = x[0]
+            user.load_from_dict(x[1])
+            widget = EditableUserInfo(user, admin_editable_info)
+            self.widget_list.update({x[0]: widget})
+            self.h_students_layout.addWidget(widget)
 
         self.main_layout.removeWidget(self.page)
         self.page.deleteLater()
         self.page = QWidget()
-        self.page.setLayout(main_layout)
+        self.page.setLayout(self.h_students_layout)
         self.main_layout.insertWidget(0, self.page)
 
 
 class TeacherStudentsPaging(BaseItemsPaging):
     widget_list_short = None
     widget_list_long = None
-    student_widget_list = None
     grade_widget = None
 
     def __init__(self, values, grade_widget):
         self.grade_widget = grade_widget
         self.widget_list_short = []
         self.widget_list_long = []
-        self.student_widget_list = {}
+        self.widget_list = {}
         super().__init__(values)
 
     def initialize_current(self):
         self.widget_list_short = []
         self.widget_list_long = []
-        self.student_widget_list = {}
+        self.widget_list = {}
         if self.h_students_layout is not None:
             self.h_students_layout.deleteLater()
         self.h_students_layout = QVBoxLayout()
@@ -141,7 +168,7 @@ class TeacherStudentsPaging(BaseItemsPaging):
                 h_assessments_layout.addWidget(assessment_box)
             students_box = QGroupBox(x[1]['name'] + ' ' + x[1]['surname'])
             students_box.setLayout(h_assessments_layout)
-            self.student_widget_list.update({x[0]: students_box})
+            self.widget_list.update({x[0]: students_box})
             self.h_students_layout.addWidget(students_box)
 
         self.main_layout.removeWidget(self.page)
@@ -154,7 +181,6 @@ class TeacherStudentsPaging(BaseItemsPaging):
 class PrincipalUserPaging(BaseItemsPaging):
     user_list = None
     user_list_long = None
-    layout = None
 
     def __init__(self, values):
         self.user_list = []
@@ -164,23 +190,27 @@ class PrincipalUserPaging(BaseItemsPaging):
     def initialize_current(self):
         self.user_list = []
         self.user_list_long = []
-        self.layout = QVBoxLayout()
-        for x in self.values[self.position * self.items_per_page:
+        self.widget_list = {}
+        if self.h_students_layout is not None:
+            self.h_students_layout.deleteLater()
+        self.h_students_layout = QVBoxLayout()
+        for x in list(self.values.items())[self.position * self.items_per_page:
         min((self.position + 1) * self.items_per_page, self.size)]:
-            user_line = EditableWidget(','.join(x['courses']))
+            user_line = EditableWidget(','.join(x[1]['courses']))
             self.user_list.append(user_line)
-            self.user_list_long.append((user_line, x['_key']))
+            self.user_list_long.append((user_line, x[0]))
 
             user_courses = QFormLayout()
             user_courses.addRow(QLabel('courses: '), user_line)
 
-            user = QGroupBox(x['name'] + ' ' + x['surname'])
+            user = QGroupBox(x[1]['name'] + ' ' + x[1]['surname'])
             user.setLayout(user_courses)
-            self.layout.addWidget(user)
-        self.layout.addStretch()
+            self.widget_list.update({x[0]: user})
+            self.h_students_layout.addWidget(user)
+        self.h_students_layout.addStretch()
 
         self.main_layout.removeWidget(self.page)
         self.page.deleteLater()
         self.page = QWidget()
-        self.page.setLayout(self.layout)
+        self.page.setLayout(self.h_students_layout)
         self.main_layout.insertWidget(0, self.page)

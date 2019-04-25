@@ -64,7 +64,7 @@ class EditableUserInfo(BaseUserInfo):
 
             buttons.save_button.clicked.connect(lambda: save(user, widgets_list))
             buttons.edit_button.clicked.connect(lambda: edit(widgets_list))
-            self.main_layout.insertLayout(0, buttons)
+            self.main_layout.insertWidget(0, buttons)
 
 
 def save(user, widgets_list):
